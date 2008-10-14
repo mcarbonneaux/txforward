@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.5.1" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+http://pear.php.net/dtd/tasks-1.0.xsd
+http://pear.php.net/dtd/package-2.0
+http://pear.php.net/dtd/package-2.0.xsd">
+ <name>TXForward</name>
+ <channel>pear.php.net</channel>
+ <summary>Reverse Proxy (web accelerator) PHP compatibility layer</summary>
+ <description>Makes reverse-proxing (web accelerator) totally invisible for php applications. Doesn't require php code modifications to handle X-Forwarded-IP.
+* Stills allows proxy-aware applications to work with X-Forwarded headers and proxy IP address.
+* Should work with any web server
+* Should work with any proxy server
+
+Using this extension with on a non reverse proxied system will result in a security issue.</description>
+<lead>
+	<name>Francois Cartegnie</name>
+	<user>txforward</user>
+	<email>pecldev@free.fr</email>
+	<active>yes</active>
+</lead>
+ <date>2008-10-14</date>
+ <version>
+	<release>1.03</release>
+ </version>
+ <stability>
+	<release>stable</release>
+ </stability>
+ <license uri="http://www.php.net/license">PHP License</license>
+	<filelist>
+		<dir role="src" name="/">
+	 		<file role="doc">CREDITS</file>
+		 	<file role="src">config.m4</file>
+			<file role="src">config.w32</file>
+ 			<file role="doc">php_txforward.h</file>
+ 			<file role="src">txforward.c</file>
+ 		</dir>
+	</filelist> 
+</package>
