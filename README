@@ -1,0 +1,11 @@
+TXForward (Tranparent X-Forwarding) module
+====================
+What is it for ?
+Enabling this module allows you to use reverse proxies (web accelerators, especially Squid) with any PHP script.
+You don't need anymore X-Forwarded aware scripts: Just scripts that works only with REMOTE_ADDR.
+====================
+How does it works ?
+It extracts the real remote address from the X-Forwarded header and substitutes it to the endpoint IP address.
+The real IP (proxy's one) is still available through $_SERVER['REAL_REMOTE_ADDR']
+====================
+WARNING: Enabling this module if you're not behing a reverse proxy allows people to fake their IP !
