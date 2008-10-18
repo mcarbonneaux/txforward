@@ -116,7 +116,7 @@ PHP_RINIT_FUNCTION(txforward)
 		zend_hash_add(htable, "REAL_REMOTE_ADDR", sizeof("REAL_REMOTE_ADDR"), &real_remote_addr, sizeof(zval*), NULL);
 
 
-		periodpointer = rindex((**forwarded_for).value.str.val, ',');
+		periodpointer = strrchr((**forwarded_for).value.str.val, ',');
 		oldstringsize = (**forwarded_for).value.str.len;
 		oldpointer = (**forwarded_for).value.str.val;
 		
