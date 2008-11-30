@@ -4,9 +4,9 @@ http://pear.php.net/dtd/tasks-1.0.xsd
 http://pear.php.net/dtd/package-2.0
 http://pear.php.net/dtd/package-2.0.xsd">
  <name>txforward</name>
- <channel>pear.php.net</channel>
+ <channel>pecl.php.net</channel>
  <summary>Reverse Proxy (web accelerator) PHP compatibility layer</summary>
- <description>Makes reverse-proxing (web accelerator) totally invisible for php applications. Doesn't require php code modifications to handle X-Forwarded-IP.
+ <description>Makes reverse-proxing (web accelerator) totally invisible for php applications. Doesn't require php code modifications to handle X-Forwarded-For IP.
 * Stills allows proxy-aware applications to work with X-Forwarded headers and proxy IP address.
 * Should work with any web server
 * Should work with any proxy server
@@ -20,8 +20,8 @@ Using this extension with on a non reverse proxied system will result in a secur
 </lead>
  <date>2008-11-30</date>
  <version>
-	<release>1.0.4</release>
-	<api>1.0.4</api>
+	<release>1.0.5</release>
+	<api>1.0.5</api>
  </version>
  <stability>
 	<release>stable</release>

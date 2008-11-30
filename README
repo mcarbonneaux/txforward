@@ -8,4 +8,8 @@ How does it works ?
 It extracts the real remote address from the X-Forwarded header and substitutes it to the endpoint IP address.
 The real IP (proxy's one) is still available through $_SERVER['REAL_REMOTE_ADDR']
 ====================
-WARNING: Enabling this module if you're not behing a reverse proxy allows people to fake their IP !
+WARNINGS: 
+-Enabling this module if you're not behing a reverse proxy allows people to fake their IP !
+-Currently only works with 1 level proxying (no chained accelerators)
+
+Todo: Multiple level proxying, proxy IP range checks

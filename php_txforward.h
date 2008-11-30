@@ -39,7 +39,7 @@ PHP_MINFO_FUNCTION(txforward);
 
 #define TXFORWARDING_NAME       "Transparent X-Forwarding"
 #define TXFORWARDING_EXTNAME    "txforward"
-#define TXFORWARDING_VERSION    "1.03"
+#define TXFORWARDING_VERSION    "1.05"
 #define TXFORWARDING_WARNING    "This module must only be used with trusted reverse proxies, and without proxy chain propagation."
 
 #ifdef ZTS
