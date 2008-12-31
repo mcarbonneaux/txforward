@@ -69,18 +69,18 @@ static void php_txforward_init_globals(zend_txforward_globals *txforward_globals
 char * php_strrchr_n(char * s, int c, int * number)
 {
        char * localperiodpointer = NULL;
-       char * nextpediodpointer = NULL;
+       char * nextperiodpointer = NULL;
        localperiodpointer = strchr(s, c);
        if (localperiodpointer!=NULL)
        {
-            nextpediodpointer = php_strrchr_n(localperiodpointer + 1, c, number);
+            nextperiodpointer = php_strrchr_n(localperiodpointer + 1, c, number);
             *number = *number - 1; /* Give my position from the end */
        }       
        
        if (*number == 0) /* My position is now zero, that what we're looking for */
            return localperiodpointer;
        else       
-           return nextpediodpointer; /* Has been/not been found yet */
+           return nextperiodpointer; /* Has been/not been found yet */
 }
 
 
@@ -120,6 +120,7 @@ PHP_RINIT_FUNCTION(txforward)
 	HashTable *htable;	
 	char *periodpointer = NULL;
 	char *tailpointer = NULL;
+	char *startpointer = NULL;
 	char *newstring = NULL;
 	int oldstringsize=0;
 	int currentdepth=1;
@@ -144,42 +145,45 @@ PHP_RINIT_FUNCTION(txforward)
 		forwarded_for = NULL;
 		remote_addr = NULL;
 	} else {
+		/* The remote address itself is behind a proxy. X-Forwarded:IP1, IP2, IP3.. only keep the trusted one*/
 		/* create a new PHP variable. */
 		MAKE_STD_ZVAL(real_remote_addr);
 		*real_remote_addr = **remote_addr; /* copy content */
 		zval_copy_ctor(real_remote_addr);
 		zend_hash_add(htable, "REAL_REMOTE_ADDR", sizeof("REAL_REMOTE_ADDR"), &real_remote_addr, sizeof(zval*), NULL);
 
-		if (TXFORWARD_G(proxy_depth) > 1)
-		{
-			currentdepth = TXFORWARD_G(proxy_depth); /* Because I'm not sure if I can modify ini's one without doing it globally */
-			periodpointer = php_strrchr_n((**forwarded_for).value.str.val, ',', &currentdepth); /* Find start of IP. The first IP can never be selected as this would mean not being behind a proxy */
-		}
-		
-		if ( (TXFORWARD_G(proxy_depth) <= 1) || (periodpointer == NULL) ) /* Fall back here in case depth was invalid.*/
-			periodpointer = strrchr((**forwarded_for).value.str.val, ',');			
-
 		oldstringsize = (**forwarded_for).value.str.len;
 		oldpointer = (**forwarded_for).value.str.val;		
-		
-		if ( periodpointer != NULL )
-		{ /* The remote address itself is behind a proxy. X-Forwarded:IP1, IP2, IP3.. keep only the trusted one*/
-			periodpointer = periodpointer + 1;  /* space after period */
-			if (*periodpointer!=',') /* in case we have forged headers */
-				tailpointer = strchr(periodpointer, ',');			
-			/* let's fake string length, so only our wanted bytes will be copied and allocated by zval_copy_ctor in our new zend variable */
-			if (tailpointer != NULL)
-				(**forwarded_for).value.str.len = tailpointer - periodpointer - 1;
-			else /* Take everything up to the end (we are the last segment)*/
-				(**forwarded_for).value.str.len = ((**forwarded_for).value.str.val + (**forwarded_for).value.str.len) - periodpointer - 1; /* fake length */
-			(**forwarded_for).value.str.val = periodpointer + 1;
+
+		if (TXFORWARD_G(proxy_depth) > 1)
+		{
+			currentdepth = TXFORWARD_G(proxy_depth); /* not sure if I can modify ini's one without doing it globally */
+			periodpointer = php_strrchr_n((**forwarded_for).value.str.val, ',', &currentdepth); /* Find end of IP.*/
+		} else {
+			periodpointer = strrchr((**forwarded_for).value.str.val, ',');
 		}
+		
+		if ( (periodpointer == NULL) || (periodpointer == (**forwarded_for).value.str.val) )
+			tailpointer = (**forwarded_for).value.str.val + (**forwarded_for).value.str.len; /* didn't found any period in our header */
+		else	tailpointer = periodpointer - 1;
+		
+		periodpointer=tailpointer;
+		while ( (periodpointer > (**forwarded_for).value.str.val) && (*periodpointer != ',') ) periodpointer--;
+
+		if ( ((periodpointer + 2) > tailpointer) || (periodpointer == (**forwarded_for).value.str.val) )
+			startpointer = (**forwarded_for).value.str.val;
+		else	
+			startpointer = periodpointer + 2; /* period + space */
+		
+		/* let's fake string length, so only our wanted bytes will be copied and allocated by zval_copy_ctor in our new zend variable */
+		(**forwarded_for).value.str.len = tailpointer - startpointer +1 ; /* fake length */
+		(**forwarded_for).value.str.val = startpointer;
 				
 		MAKE_STD_ZVAL(newval);
 		*newval = **forwarded_for;
-		
+
 		zval_copy_ctor(*forwarded_for); /*more efficient copy*/
-		
+
 		(**forwarded_for).value.str.len = oldstringsize; /* restore length in case we changed it before copy */
 		(**forwarded_for).value.str.val = oldpointer; /* restore original string pointer */
 		

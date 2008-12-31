@@ -8,8 +8,19 @@ How does it works ?
 It extracts the real remote address from the X-Forwarded header and substitutes it to the endpoint IP address.
 The real IP (proxy's one) is still available through $_SERVER['REAL_REMOTE_ADDR']
 ====================
-WARNINGS: 
+WARNING: 
 -Enabling this module if you're not behing a reverse proxy allows people to fake their IP !
--Currently only works with 1 level proxying (no chained accelerators)
 
-Todo: Multiple level proxying, proxy IP range checks
+If you're chaining proxies, you can specify proxy depth in your php.ini.
+For exemple for 3 chained proxies:
+
+	CLIENTS <-> RPROXY1 <-> RPROXY2 <-> RPROXY3 <-> WEBSERVER
+depth	   4	       3	   2	       1	   0	
+
+You can specify:
+	[txforward]
+	txforward.depth = 4
+This will look for the IP that is in position 4 behind the 3 chained proxies.
+
+In case of misconfiguration,  it always falls back to a depth of 0.
+
