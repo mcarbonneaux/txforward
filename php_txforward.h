@@ -34,13 +34,19 @@ extern zend_module_entry txforward_module_entry;
 #include "TSRM.h"
 #endif
 
+PHP_MINIT_FUNCTION(txforward);
+PHP_MSHUTDOWN_FUNCTION(txforward);
 PHP_RINIT_FUNCTION(txforward);
 PHP_MINFO_FUNCTION(txforward);
 
+ZEND_BEGIN_MODULE_GLOBALS(txforward)
+	int proxy_depth; /* configuration directive */
+ZEND_END_MODULE_GLOBALS(txforward)
+
 #define TXFORWARDING_NAME       "Transparent X-Forwarding"
 #define TXFORWARDING_EXTNAME    "txforward"
-#define TXFORWARDING_VERSION    "1.05"
-#define TXFORWARDING_WARNING    "This module must only be used with trusted reverse proxies, and without proxy chain propagation."
+#define TXFORWARDING_VERSION    "1.06"
+#define TXFORWARDING_WARNING    "This module must only be used with trusted reverse proxies."
 
 #ifdef ZTS
 #define TXFORWARD_G(v) TSRMG(txforward_globals_id, zend_txforward_globals *, v)

@@ -27,21 +27,8 @@
 #include "ext/standard/info.h"
 #include "php_txforward.h"
 
-/* If you declare any globals in php_txforward.h uncomment this:
+
 ZEND_DECLARE_MODULE_GLOBALS(txforward)
-*/
-
-/* True global resources - no need for thread safety here */
-static int le_txforward;
-
-/* {{{ txforward_functions[]
- *
- * Every user visible function must have an entry in txforward_functions[].
- */
-zend_function_entry txforward_functions[] = {
-	{NULL, NULL, NULL}	/* Must be the last line in txforward_functions[] */
-};
-/* }}} */
 
 /* {{{ txforward_module_entry
  */
@@ -51,8 +38,8 @@ zend_module_entry txforward_module_entry = {
 #endif
     TXFORWARDING_EXTNAME,
     NULL,
-    NULL,
-    NULL,
+    PHP_MINIT(txforward),
+    PHP_MSHUTDOWN(txforward),
     PHP_RINIT(txforward),
     NULL,
     PHP_MINFO(txforward),
@@ -66,6 +53,37 @@ zend_module_entry txforward_module_entry = {
 ZEND_GET_MODULE(txforward)
 #endif
 
+/* Declare PHP ini configuration entry */
+PHP_INI_BEGIN()
+	STD_PHP_INI_ENTRY("txforward.depth", "1", PHP_INI_SYSTEM|PHP_INI_PERDIR, OnUpdateLong, proxy_depth, zend_txforward_globals, txforward_globals)
+PHP_INI_END()
+
+static void php_txforward_init_globals(zend_txforward_globals *txforward_globals)
+{
+	txforward_globals->proxy_depth = 1;
+}
+
+/*
+ * Returns the number Nth position from end of c in the string s
+ */
+char * php_strrchr_n(char * s, int c, int * number)
+{
+       char * localperiodpointer = NULL;
+       char * nextpediodpointer = NULL;
+       localperiodpointer = strchr(s, c);
+       if (localperiodpointer!=NULL)
+       {
+            nextpediodpointer = php_strrchr_n(localperiodpointer + 1, c, number);
+            *number = *number - 1; /* Give my position from the end */
+       }       
+       
+       if (*number == 0) /* My position is now zero, that what we're looking for */
+           return localperiodpointer;
+       else       
+           return nextpediodpointer; /* Has been/not been found yet */
+}
+
+
 PHP_MINFO_FUNCTION(txforward)
 {
 	php_info_print_table_start();
@@ -74,6 +92,21 @@ PHP_MINFO_FUNCTION(txforward)
 	php_info_print_table_row(2, "Security", TXFORWARDING_WARNING);
 	php_info_print_table_row(2, "Real IP stored in", "$_SERVER['REAL_REMOTE_ADDR']");	
 	php_info_print_table_end();
+	DISPLAY_INI_ENTRIES();
+}
+
+PHP_MINIT_FUNCTION(txforward)
+{	
+	ZEND_INIT_MODULE_GLOBALS(txforward, php_txforward_init_globals, NULL);
+	REGISTER_INI_ENTRIES();
+	if (TXFORWARD_G(proxy_depth)<1)	TXFORWARD_G(proxy_depth) = 1; /* sanitize */
+	return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(txforward)
+{
+	UNREGISTER_INI_ENTRIES();
+	return SUCCESS;
 }
 
 PHP_RINIT_FUNCTION(txforward)
@@ -86,8 +119,10 @@ PHP_RINIT_FUNCTION(txforward)
 	zval *newval = NULL;
 	HashTable *htable;	
 	char *periodpointer = NULL;
+	char *tailpointer = NULL;
 	char *newstring = NULL;
 	int oldstringsize=0;
+	int currentdepth=1;
 	char *oldpointer = NULL;
 	
 #ifdef ZEND_ENGINE_2_1
@@ -115,16 +150,28 @@ PHP_RINIT_FUNCTION(txforward)
 		zval_copy_ctor(real_remote_addr);
 		zend_hash_add(htable, "REAL_REMOTE_ADDR", sizeof("REAL_REMOTE_ADDR"), &real_remote_addr, sizeof(zval*), NULL);
 
+		if (TXFORWARD_G(proxy_depth) > 1)
+		{
+			currentdepth = TXFORWARD_G(proxy_depth); /* Because I'm not sure if I can modify ini's one without doing it globally */
+			periodpointer = php_strrchr_n((**forwarded_for).value.str.val, ',', &currentdepth); /* Find start of IP. The first IP can never be selected as this would mean not being behind a proxy */
+		}
+		
+		if ( (TXFORWARD_G(proxy_depth) <= 1) || (periodpointer == NULL) ) /* Fall back here in case depth was invalid.*/
+			periodpointer = strrchr((**forwarded_for).value.str.val, ',');			
 
-		periodpointer = strrchr((**forwarded_for).value.str.val, ',');
 		oldstringsize = (**forwarded_for).value.str.len;
-		oldpointer = (**forwarded_for).value.str.val;
+		oldpointer = (**forwarded_for).value.str.val;		
 		
 		if ( periodpointer != NULL )
 		{ /* The remote address itself is behind a proxy. X-Forwarded:IP1, IP2, IP3.. keep only the trusted one*/
-			/* let's fake string length, so only our wanted bytes will be copied and allocated by zval_copy_ctor in our new zend variable */
 			periodpointer = periodpointer + 1;  /* space after period */
-			(**forwarded_for).value.str.len = ((**forwarded_for).value.str.val + (**forwarded_for).value.str.len) - periodpointer - 1; /* fake length */
+			if (*periodpointer!=',') /* in case we have forged headers */
+				tailpointer = strchr(periodpointer, ',');			
+			/* let's fake string length, so only our wanted bytes will be copied and allocated by zval_copy_ctor in our new zend variable */
+			if (tailpointer != NULL)
+				(**forwarded_for).value.str.len = tailpointer - periodpointer - 1;
+			else /* Take everything up to the end (we are the last segment)*/
+				(**forwarded_for).value.str.len = ((**forwarded_for).value.str.val + (**forwarded_for).value.str.len) - periodpointer - 1; /* fake length */
 			(**forwarded_for).value.str.val = periodpointer + 1;
 		}
 				
