@@ -45,7 +45,7 @@ ZEND_END_MODULE_GLOBALS(txforward)
 
 #define TXFORWARDING_NAME       "Transparent X-Forwarding"
 #define TXFORWARDING_EXTNAME    "txforward"
-#define TXFORWARDING_VERSION    "1.06"
+#define PHP_TXFORWARD_VERSION    "1.06"
 #define TXFORWARDING_WARNING    "This module must only be used with trusted reverse proxies."
 
 #ifdef ZTS
